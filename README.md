@@ -4,4 +4,4 @@ Integrantes:
 - Luis Alejandro Castrillón Pulgarín.
 - Sara López Marín.
 - Paula Inés LLanos López.
-- Samuel Enrique Rivero Urribarrí. prueba
+- Samuel Enrique Rivero Urribarrí. 
