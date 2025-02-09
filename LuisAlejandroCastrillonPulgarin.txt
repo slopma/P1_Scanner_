@@ -1,6 +1,0 @@
-<<<<<<< HEAD
-Luis Alejandro Castrillón Pulgarín.
-=======
-Luis Alejandro Castrillón Pulgarín
->>>>>>> fd0d04338c4bf723ab3a9a52316ad854fab6bb8f
-Mi primer commit.
