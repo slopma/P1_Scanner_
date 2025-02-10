@@ -1,4 +1,5 @@
-## Historia de Usuario 2
+## Historia de Usuario (Cargar la CV)
+
 
 ### Escenario 1: Tomar una foto del CV
 _Dado_ que el usuario está en la sección de escaneo de CV,  
