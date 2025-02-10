@@ -1,7 +1,8 @@
-# Scanner_CV
-Proyecto para Proyecto Integrador 1, para el pregrado de Ingeniería de Sistemas de la Universidad EAFIT.
-Integrantes:
-- Luis Alejandro Castrillón Pulgarín.
-- Sara López Marín.
-- Paula Inés LLanos López.
-- Samuel Enrique Rivero Urribarrí. 
+## Historia de Usuario 3 (S - Should have)
+Título: Como sistema, quiero analizar y clasificar automáticamente la información escaneada del CV.
+
+**Criterios de Aceptación**:
+
+- La IA identifica y categoriza los datos (nombre, experiencia, educación, etc.).
+- Se detectan sinónimos y variaciones de términos para una mejor clasificación.
+- El usuario puede revisar y editar los campos detectados.
