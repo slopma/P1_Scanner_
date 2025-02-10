@@ -1,0 +1,1 @@
+ C:\\flutter\\p1_scanner\\.dart_tool\\flutter_build\\9730e4beedeb32e80493d727da64287a\\native_assets.yaml: 
