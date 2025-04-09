@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'dart:typed_data';
+import 'dart:io';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Supabase.initialize( //
-    url: 'https://zpprbzujtziokfyyhlfa.supabase.co', 
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwcHJienVqdHppb2tmeXlobGZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA3ODAyNzgsImV4cCI6MjA1NjM1NjI3OH0.cVRK3Ffrkjk7M4peHsiPPpv_cmXwpX859Ii49hohSLk', 
+  await Supabase.initialize(
+    url: 'linksupabase_remplazar',
+    anonKey: 'llave_remplazar',
   );
-  WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
-  options: DefaultFirebaseOptions.currentPlatform,
-);
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   runApp(MyApp());
 }
@@ -50,12 +52,55 @@ class PantallaSubirCVState extends State<PantallaSubirCV> {
     'Habilidades': 'Liderazgo, comunicación',
   };
 
-  Future<void> pickFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
-    if (result != null) {
+  Future<void> subirArchivo(Uint8List archivoBytes, String nombreArchivo) async {
+    final supabase = Supabase.instance.client;
+    final response = await supabase.storage
+        .from('cv')
+        .uploadBinary('archivos/$nombreArchivo', archivoBytes);
+
+    if (response.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al subir archivo: No se pudo obtener la URL del archivo')),
+      );
+    } else {
       setState(() {
-        filePath = result.files.single.name;
+        filePath = nombreArchivo;
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Archivo subido exitosamente')), 
+      );
+    }
+  }
+
+  Future<void> tomarFoto() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? foto = await picker.pickImage(source: ImageSource.camera);
+    if (foto != null) {
+      final bytes = await foto.readAsBytes();
+      final nombreArchivo = 'foto_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      await subirArchivo(bytes, nombreArchivo);
+    }
+  }
+
+  Future<void> subirPDF() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+    if (result != null) {
+      final archivo = result.files.first;
+      Uint8List? archivoBytes = archivo.bytes;
+      if (archivoBytes == null && archivo.path != null) {
+        archivoBytes = await File(archivo.path!).readAsBytes();
+      }
+      if (archivoBytes != null) {
+        final nombreArchivo = archivo.name;
+        await subirArchivo(archivoBytes, nombreArchivo);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo leer el archivo')),
+        );
+      }
     }
   }
 
@@ -63,7 +108,10 @@ class PantallaSubirCVState extends State<PantallaSubirCV> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => PantallaAnalizarCV(extractedData: datosCV),
+        builder: (context) => PantallaAnalizarCV(
+          extractedData: datosCV,
+          archivoSubido: filePath,
+        ),
       ),
     );
   }
@@ -94,21 +142,20 @@ class PantallaSubirCVState extends State<PantallaSubirCV> {
               Icon(Icons.upload_file, size: 100, color: Colors.blue),
               SizedBox(height: 20),
               ElevatedButton.icon(
-                onPressed: pickFile,
-                icon: Icon(Icons.folder_open),
-                label: Text('Seleccionar archivo'),
+                onPressed: tomarFoto,
+                icon: Icon(Icons.camera_alt),
+                label: Text('Tomar foto de hoja de vida'),
               ),
-              SizedBox(height: 20),
-              if (filePath != null)
-                Text(
-                  'Archivo seleccionado: $filePath',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
-              SizedBox(height: 20),
+              SizedBox(height: 10),
+              ElevatedButton.icon(
+                onPressed: subirPDF,
+                icon: Icon(Icons.upload_file),
+                label: Text('Subir archivo PDF'),
+              ),
+              SizedBox(height: 10),
               ElevatedButton(
-                onPressed: filePath != null ? analizarCV : null,
-                child: Text('Analizar hoja de vida'),
+                onPressed: analizarCV,
+                child: Text('Completar formulario manual'),
               ),
             ],
           ),
@@ -120,8 +167,9 @@ class PantallaSubirCVState extends State<PantallaSubirCV> {
 
 class PantallaAnalizarCV extends StatefulWidget {
   final Map<String, String> extractedData;
+  final String? archivoSubido;
 
-  PantallaAnalizarCV({required this.extractedData});
+  PantallaAnalizarCV({required this.extractedData, this.archivoSubido});
 
   @override
   PantallaAnalizarCVState createState() => PantallaAnalizarCVState();
@@ -140,7 +188,6 @@ class PantallaAnalizarCVState extends State<PantallaAnalizarCV> {
 
   Future<void> guardarEnSupabase() async {
     final supabase = Supabase.instance.client;
-
     try {
       await supabase.from('cv_analizados').insert({
         'nombre': controllers['Nombre']!.text,
@@ -156,7 +203,7 @@ class PantallaAnalizarCVState extends State<PantallaAnalizarCV> {
         SnackBar(content: Text('Datos guardados correctamente')),
       );
 
-      Navigator.pop(context); 
+      Navigator.pop(context);
     } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al guardar los datos: $error')),
